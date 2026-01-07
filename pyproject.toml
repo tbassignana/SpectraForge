@@ -36,6 +36,13 @@ dev = [
 hdr = [
     "OpenEXR>=3.0.0",
 ]
+denoise = [
+    "oidn>=2.0.0",
+]
+all = [
+    "OpenEXR>=3.0.0",
+    "oidn>=2.0.0",
+]
 
 [project.scripts]
 spectraforge = "spectraforge.cli:main"

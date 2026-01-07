@@ -48,17 +48,26 @@
 - [x] Cross-platform compatibility (ARM/x86)
 - [x] Platform detection and info
 
+#### Phase 6: Advanced Rendering ✅
+- [x] OpenEXR output support (renderer.py)
+- [x] Environment map lighting (HDRI) (environment.py)
+- [x] Texture mapping (textures.py)
+- [x] Normal mapping (textures.py)
+- [x] Motion blur (camera.py)
+- [x] Mesh loading (OBJ format) (obj_loader.py)
+- [x] More shapes - Box, Cylinder, Cone (shapes.py)
+- [x] Importance sampling for lights (lights.py)
+- [x] Multiple importance sampling (MIS) (mis.py)
+
+#### Phase 7: Post-Processing ✅
+- [x] Denoising integration (denoiser.py)
+  - Intel Open Image Denoise (OIDN) integration
+  - Bilateral filter fallback
+  - Joint bilateral filter with auxiliary buffers
+  - Albedo/normal buffer support
+
 ### Future Enhancements
-- [ ] OpenEXR output support
-- [ ] Environment map lighting (HDRI)
-- [ ] Texture mapping
-- [ ] Normal mapping
-- [ ] Motion blur
-- [ ] Mesh loading (OBJ format)
-- [ ] More shapes (Box, Cylinder, Cone)
-- [ ] Importance sampling for lights
-- [ ] Multiple importance sampling (MIS)
-- [ ] Denoising integration
+(All planned features have been implemented!)
 
 ---
 ## Architecture
@@ -68,13 +77,18 @@ spectraforge/
 ├── __init__.py      # Package exports
 ├── vec3.py          # Vector3 math (Point3, Color)
 ├── ray.py           # Ray class
-├── shapes.py        # Sphere, Plane, Triangle, AABB, HittableList
+├── shapes.py        # Sphere, Plane, Triangle, Box, Cylinder, Cone, AABB
 ├── materials.py     # Lambertian, Metal, Dielectric, PBR, Emissive
-├── camera.py        # Camera with DOF
-├── renderer.py      # Path tracer, HDR output
+├── camera.py        # Camera with DOF and motion blur
+├── renderer.py      # Path tracer, HDR/EXR output
 ├── bvh.py           # BVH acceleration structure
-├── lights.py        # Point, Directional, Area, Sphere lights
+├── lights.py        # Point, Directional, Area, Sphere lights + sampling
 ├── volumes.py       # Fog, smoke, SSS
+├── textures.py      # Image, procedural, normal map textures
+├── environment.py   # HDRI environment maps
+├── obj_loader.py    # OBJ mesh loading with smooth shading
+├── mis.py           # Multiple importance sampling
+├── denoiser.py      # OIDN + bilateral filter denoising
 └── scene_parser.py  # YAML/JSON scene loader
 ```
 
@@ -88,4 +102,11 @@ spectraforge/
 - Added lighting system
 - Implemented volumetrics and SSS
 - Added scene description parser
-- 164 unit tests passing
+- Added texture mapping system and geometric shapes (Box, Cylinder, Cone)
+- Added OBJ mesh loader with smooth shading support
+- Added environment map lighting (HDRI) system
+- Added motion blur support with temporal sampling
+- Enhanced importance sampling for lights
+- Added Multiple Importance Sampling (MIS) for variance reduction
+- Added denoising integration (OIDN + bilateral filter fallback)
+- 367 unit tests passing

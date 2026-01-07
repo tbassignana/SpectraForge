@@ -33,3 +33,8 @@ from .mis import (
     balance_heuristic, power_heuristic, multi_power_heuristic,
     MISSample, MISIntegrator, one_sample_mis, NextEventEstimation
 )
+from .denoiser import (
+    Denoiser, DenoiseResult, OIDNDenoiser, BilateralDenoiser,
+    JointBilateralDenoiser, create_denoiser, denoise_image,
+    AuxiliaryBufferRenderer
+)

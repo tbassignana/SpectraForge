@@ -65,6 +65,24 @@
   - Bilateral filter fallback
   - Joint bilateral filter with auxiliary buffers
   - Albedo/normal buffer support
+- [x] Tone mapping (tonemapping.py)
+  - Reinhard (global and extended)
+  - ACES Filmic
+  - Uncharted 2 (Hable)
+  - Exposure-based with gamma
+  - sRGB conversion utilities
+- [x] Bloom/glow effects (bloom.py)
+  - Threshold-based bright pixel extraction
+  - Multi-scale progressive blur (Kawase-style)
+  - Quality presets (LOW/MEDIUM/HIGH/ULTRA)
+  - Lens flare/star patterns
+- [x] Color correction (color_correction.py)
+  - Exposure, contrast, saturation
+  - Color temperature/tint
+  - Shadow/midtone/highlight controls
+  - Channel gains (RGB)
+  - 3D LUT support (.cube files)
+  - Vignette effect
 
 ### Future Enhancements
 (All planned features have been implemented!)
@@ -89,6 +107,9 @@ spectraforge/
 ├── obj_loader.py    # OBJ mesh loading with smooth shading
 ├── mis.py           # Multiple importance sampling
 ├── denoiser.py      # OIDN + bilateral filter denoising
+├── tonemapping.py   # HDR to LDR tone mapping operators
+├── bloom.py         # Bloom/glow post-processing effects
+├── color_correction.py  # Color grading and correction
 └── scene_parser.py  # YAML/JSON scene loader
 ```
 
@@ -109,4 +130,7 @@ spectraforge/
 - Enhanced importance sampling for lights
 - Added Multiple Importance Sampling (MIS) for variance reduction
 - Added denoising integration (OIDN + bilateral filter fallback)
-- 367 unit tests passing
+- Added tone mapping (Reinhard, ACES Filmic, Uncharted 2, sRGB conversion)
+- Added bloom/glow effects with multi-scale blur
+- Added color correction (exposure, contrast, saturation, temperature, LUT support)
+- 477 unit tests passing

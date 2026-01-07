@@ -38,3 +38,16 @@ from .denoiser import (
     JointBilateralDenoiser, create_denoiser, denoise_image,
     AuxiliaryBufferRenderer
 )
+from .tonemapping import (
+    ToneMapper, ToneMappingOperator, ToneMappingResult,
+    LinearToneMapper, ReinhardToneMapper, ACESFilmicToneMapper,
+    Uncharted2ToneMapper, ExposureToneMapper,
+    create_tone_mapper, tone_map, apply_gamma, linear_to_srgb, srgb_to_linear
+)
+from .bloom import (
+    BloomEffect, BloomQuality, BloomResult, LensFlare, apply_bloom
+)
+from .color_correction import (
+    ColorCorrector, ColorCorrectionSettings, ColorCorrectionResult,
+    LUT, Vignette, apply_color_correction
+)

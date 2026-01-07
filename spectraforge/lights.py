@@ -357,11 +357,16 @@ class SphereLight(Light, Hittable):
 
 
 class LightList:
-    """Collection of lights for sampling."""
+    """Collection of lights for importance sampling.
+
+    Supports power-weighted light selection and combined PDF computation
+    for multiple importance sampling (MIS).
+    """
 
     def __init__(self, lights: list[Light] = None):
         self.lights: list[Light] = lights if lights else []
         self._total_power: float = 0.0
+        self._power_cdf: list[float] = []
         self._update_power()
 
     def add(self, light: Light) -> None:
@@ -369,12 +374,28 @@ class LightList:
         self.lights.append(light)
         self._update_power()
 
+    def clear(self) -> None:
+        """Remove all lights."""
+        self.lights.clear()
+        self._total_power = 0.0
+        self._power_cdf.clear()
+
     def _update_power(self) -> None:
-        """Update total power for importance sampling."""
+        """Update total power and CDF for importance sampling."""
         self._total_power = sum(l.power() for l in self.lights)
+
+        # Build CDF for efficient sampling
+        self._power_cdf = []
+        cumulative = 0.0
+        for light in self.lights:
+            cumulative += light.power()
+            self._power_cdf.append(cumulative)
 
     def sample(self, hit_point: Point3) -> Tuple[LightSample, int]:
         """Sample a light using power-based importance sampling.
+
+        Args:
+            hit_point: The point being illuminated
 
         Returns:
             Tuple of (LightSample, light_index)
@@ -385,16 +406,9 @@ class LightList:
         if len(self.lights) == 1:
             return self.lights[0].sample(hit_point), 0
 
-        # Power-weighted random selection
+        # Binary search in CDF for efficient sampling
         r = random.random() * self._total_power
-        cumulative = 0.0
-        selected_idx = len(self.lights) - 1
-
-        for i, light in enumerate(self.lights):
-            cumulative += light.power()
-            if r <= cumulative:
-                selected_idx = i
-                break
+        selected_idx = self._binary_search_cdf(r)
 
         light_sample = self.lights[selected_idx].sample(hit_point)
 
@@ -404,8 +418,118 @@ class LightList:
 
         return light_sample, selected_idx
 
+    def _binary_search_cdf(self, value: float) -> int:
+        """Binary search to find the light index for a given random value."""
+        left, right = 0, len(self._power_cdf) - 1
+
+        while left < right:
+            mid = (left + right) // 2
+            if self._power_cdf[mid] < value:
+                left = mid + 1
+            else:
+                right = mid
+
+        return left
+
+    def sample_all(self, hit_point: Point3) -> list[LightSample]:
+        """Sample all lights (for direct lighting with MIS).
+
+        Args:
+            hit_point: The point being illuminated
+
+        Returns:
+            List of LightSamples from all lights
+        """
+        return [light.sample(hit_point) for light in self.lights]
+
+    def pdf(self, light_idx: int) -> float:
+        """Get the probability of selecting a specific light.
+
+        Args:
+            light_idx: Index of the light
+
+        Returns:
+            Selection probability
+        """
+        if not self.lights or self._total_power == 0:
+            return 0.0
+        return self.lights[light_idx].power() / self._total_power
+
+    def total_power(self) -> float:
+        """Return the total power of all lights."""
+        return self._total_power
+
     def __len__(self) -> int:
         return len(self.lights)
 
     def __iter__(self):
         return iter(self.lights)
+
+    def __getitem__(self, idx: int) -> Light:
+        return self.lights[idx]
+
+
+def compute_direct_lighting(
+    hit_point: Point3,
+    normal: Vec3,
+    lights: LightList,
+    world: Hittable
+) -> Color:
+    """Compute direct lighting contribution using importance sampling.
+
+    This samples each light and checks for occlusion (shadows).
+
+    Args:
+        hit_point: Surface point
+        normal: Surface normal
+        lights: Light sources to sample
+        world: Scene geometry for shadow rays
+
+    Returns:
+        Direct lighting contribution color
+    """
+    result = Color(0, 0, 0)
+
+    for light in lights:
+        sample = light.sample(hit_point)
+
+        # Check if light is on the correct side
+        n_dot_l = normal.dot(sample.direction)
+        if n_dot_l <= 0:
+            continue
+
+        # Shadow ray - check for occlusion
+        shadow_ray = Ray(hit_point + normal * 0.001, sample.direction)
+        shadow_hit = world.hit(shadow_ray, 0.001, sample.distance - 0.001)
+
+        if shadow_hit is None:
+            # No occlusion - add light contribution
+            # Lambert's cosine law
+            contribution = sample.intensity * n_dot_l / sample.pdf
+            result = result + contribution
+
+    return result
+
+
+def sample_light_direction(
+    hit_point: Point3,
+    lights: LightList
+) -> Tuple[Vec3, Color, float]:
+    """Sample a direction toward a light for path tracing.
+
+    Args:
+        hit_point: Current surface point
+        lights: Available light sources
+
+    Returns:
+        Tuple of (direction, light_color, pdf)
+    """
+    if len(lights) == 0:
+        # No lights - return uniform hemisphere sample
+        direction = Vec3.random_unit_vector()
+        if direction.y < 0:
+            direction = -direction
+        return direction, Color(0, 0, 0), 1.0 / (2.0 * math.pi)
+
+    sample, _ = lights.sample(hit_point)
+    return sample.direction, sample.intensity, sample.pdf

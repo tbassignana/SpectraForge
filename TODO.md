@@ -103,8 +103,63 @@
   - Tile-based adaptive sampling for multi-threading
   - Sample budget estimation utilities
 
+#### Phase 8: User Interface ✅
+- [x] Web-based UI server (ui_server.py)
+  - Python HTTP server with no external dependencies
+  - REST API for render control
+  - Background render with progress polling
+- [x] Frontend (static/index.html, static/app.js, static/style.css)
+  - Responsive design for desktop/tablet
+  - Real-time render preview
+  - Scene parameter controls
+- [x] UI Features:
+  - [x] Scene selection (demo, cornell, minimal)
+  - [x] Render settings (resolution, samples, depth, threads)
+  - [x] Camera controls (position, look-at, FOV, aperture, focus distance)
+  - [x] Post-processing controls (tone mapping, bloom, denoise, exposure)
+  - [x] Start/Stop render controls
+  - [x] Progress bar with ETA
+  - [x] Download rendered image (PNG)
+
+### User Experience Flow
+```
+1. Launch UI: python -m spectraforge.ui
+2. Browser opens to http://localhost:8080
+3. User sees:
+   ┌─────────────────────────────────────────────────────┐
+   │  SpectraForge Ray Tracer                    [?][X]  │
+   ├─────────────────┬───────────────────────────────────┤
+   │ Scene Settings  │                                   │
+   │ ┌─────────────┐ │      [Render Preview Area]        │
+   │ │ Preset: ▼   │ │                                   │
+   │ │ Demo Scene  │ │                                   │
+   │ └─────────────┘ │                                   │
+   │                 │                                   │
+   │ Render Settings │                                   │
+   │ Width:  [800 ] │                                   │
+   │ Height: [600 ] │                                   │
+   │ Samples:[100 ] │                                   │
+   │ Depth:  [50  ] │                                   │
+   │ Threads:[Auto] │                                   │
+   │                 │                                   │
+   │ Camera          │   ████████░░░░░░░░ 52% ETA: 1:23  │
+   │ Position X/Y/Z  │                                   │
+   │ Look At  X/Y/Z  │   [▶ Render] [⏹ Stop] [💾 Save]  │
+   │ FOV: [20°]      │                                   │
+   │ Aperture: [0.1] │                                   │
+   │                 │                                   │
+   │ Post-Processing │                                   │
+   │ ☑ Denoise       │                                   │
+   │ ☑ Tone Map: ▼   │                                   │
+   │ ☐ Bloom         │                                   │
+   └─────────────────┴───────────────────────────────────┘
+4. User adjusts settings, clicks Render
+5. Real-time progress updates in preview area
+6. Download or save completed render
+```
+
 ### Future Enhancements
-(All planned features have been implemented!)
+(All planned features implemented!)
 
 ---
 ## Architecture
@@ -132,7 +187,13 @@ spectraforge/
 ├── postprocess.py   # Post-processing pipeline orchestrator
 ├── aov.py           # Render passes (AOV) support
 ├── adaptive.py      # Adaptive sampling
-└── scene_parser.py  # YAML/JSON scene loader
+├── scene_parser.py  # YAML/JSON scene loader
+├── ui_server.py     # Web UI HTTP server
+├── ui.py            # UI entry point
+└── static/          # Web UI frontend
+    ├── index.html   # Main HTML page
+    ├── style.css    # UI styles
+    └── app.js       # UI JavaScript
 ```
 
 ---
@@ -158,4 +219,9 @@ spectraforge/
 - Added unified post-processing pipeline with chromatic aberration, sharpen, film grain
 - Added AOV/render pass support (depth, normal, albedo, object ID, etc.)
 - Added adaptive sampling with per-pixel variance tracking
-- 611 unit tests passing
+- Added platform-agnostic web UI (Phase 8)
+  - HTTP server using Python stdlib only
+  - Responsive HTML/CSS/JS frontend
+  - Real-time render progress and preview
+  - Scene, camera, and post-processing controls
+- 631 unit tests passing

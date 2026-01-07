@@ -67,3 +67,9 @@ from .adaptive import (
     AdaptiveMode, AdaptiveStats, PixelState, AdaptiveSampler,
     TileAdaptiveSampler, estimate_required_samples
 )
+
+# UI server (lazy import to avoid startup cost)
+def run_ui(host: str = 'localhost', port: int = 8080, open_browser: bool = True):
+    """Run the SpectraForge web UI."""
+    from .ui_server import run_server
+    run_server(host, port, open_browser)

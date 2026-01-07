@@ -83,6 +83,12 @@
   - Channel gains (RGB)
   - 3D LUT support (.cube files)
   - Vignette effect
+- [x] Post-processing pipeline (postprocess.py)
+  - Unified pipeline orchestrator with optimal stage ordering
+  - Chromatic aberration (lens color fringing simulation)
+  - Sharpen filter (unsharp mask)
+  - Film grain effect (artistic/cinematic look)
+  - Intermediate result storage for debugging
 
 ### Future Enhancements
 (All planned features have been implemented!)
@@ -110,6 +116,7 @@ spectraforge/
 ├── tonemapping.py   # HDR to LDR tone mapping operators
 ├── bloom.py         # Bloom/glow post-processing effects
 ├── color_correction.py  # Color grading and correction
+├── postprocess.py   # Post-processing pipeline orchestrator
 └── scene_parser.py  # YAML/JSON scene loader
 ```
 
@@ -133,4 +140,5 @@ spectraforge/
 - Added tone mapping (Reinhard, ACES Filmic, Uncharted 2, sRGB conversion)
 - Added bloom/glow effects with multi-scale blur
 - Added color correction (exposure, contrast, saturation, temperature, LUT support)
-- 477 unit tests passing
+- Added unified post-processing pipeline with chromatic aberration, sharpen, film grain
+- 517 unit tests passing

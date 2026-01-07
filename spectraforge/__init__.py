@@ -51,3 +51,9 @@ from .color_correction import (
     ColorCorrector, ColorCorrectionSettings, ColorCorrectionResult,
     LUT, Vignette, apply_color_correction
 )
+from .postprocess import (
+    PostProcessingPipeline, PostProcessStage, PipelineResult,
+    ChromaticAberration, SharpenFilter, FilmGrain,
+    apply_chromatic_aberration, apply_sharpen, apply_film_grain,
+    create_pipeline
+)

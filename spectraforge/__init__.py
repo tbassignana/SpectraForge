@@ -29,3 +29,7 @@ from .environment import (
     Environment, SolidColorEnvironment, GradientEnvironment,
     HDRIEnvironment, ProceduralSky, load_hdri, create_simple_sky
 )
+from .mis import (
+    balance_heuristic, power_heuristic, multi_power_heuristic,
+    MISSample, MISIntegrator, one_sample_mis, NextEventEstimation
+)

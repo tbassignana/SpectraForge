@@ -59,8 +59,9 @@ class Lambertian(Material):
             albedo: The base color (RGB, each component 0-1)
         """
         self.albedo = albedo
+        self.texture = None
 
-    def scatter(self, ray_in: Ray, hit_point: Vec3, normal: Vec3, front_face: bool) -> Optional[ScatterResult]:
+    def scatter(self, ray_in: Ray, hit_point: Vec3, normal: Vec3, front_face: bool, u: float = 0, v: float = 0) -> Optional[ScatterResult]:
         scatter_direction = normal + Vec3.random_unit_vector()
 
         # Catch degenerate scatter direction
@@ -68,9 +69,44 @@ class Lambertian(Material):
             scatter_direction = normal
 
         scattered = Ray(hit_point, scatter_direction.normalize(), ray_in.time)
+
+        # Use texture if available
+        if self.texture is not None:
+            attenuation = self.texture.value(u, v, hit_point)
+        else:
+            attenuation = self.albedo
+
         return ScatterResult(
             scattered_ray=scattered,
-            attenuation=self.albedo,
+            attenuation=attenuation,
+            is_specular=False
+        )
+
+
+class TexturedLambertian(Material):
+    """Diffuse material with texture support."""
+
+    def __init__(self, texture):
+        """Create a textured Lambertian material.
+
+        Args:
+            texture: A Texture object for the albedo
+        """
+        from .textures import Texture
+        self.texture = texture
+
+    def scatter(self, ray_in: Ray, hit_point: Vec3, normal: Vec3, front_face: bool, u: float = 0, v: float = 0) -> Optional[ScatterResult]:
+        scatter_direction = normal + Vec3.random_unit_vector()
+
+        if scatter_direction.near_zero():
+            scatter_direction = normal
+
+        scattered = Ray(hit_point, scatter_direction.normalize(), ray_in.time)
+        attenuation = self.texture.value(u, v, hit_point)
+
+        return ScatterResult(
+            scattered_ray=scattered,
+            attenuation=attenuation,
             is_specular=False
         )
 

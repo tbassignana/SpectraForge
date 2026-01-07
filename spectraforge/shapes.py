@@ -390,3 +390,322 @@ class Triangle(Hittable):
             max(self.v0.z, self.v1.z, self.v2.z) + 0.0001
         )
         return AABB(min_pt, max_pt)
+
+
+class Box(Hittable):
+    """An axis-aligned box defined by two corner points."""
+
+    def __init__(self, p0: Point3, p1: Point3, material: Optional[Material] = None):
+        """Create a box from two opposite corners.
+
+        Args:
+            p0: One corner of the box
+            p1: Opposite corner of the box
+            material: Material for shading
+        """
+        self.p0 = Point3(min(p0.x, p1.x), min(p0.y, p1.y), min(p0.z, p1.z))
+        self.p1 = Point3(max(p0.x, p1.x), max(p0.y, p1.y), max(p0.z, p1.z))
+        self.material = material
+
+    def hit(self, ray: Ray, t_min: float, t_max: float) -> Optional[HitRecord]:
+        """Test ray-box intersection using slab method."""
+        t_near = t_min
+        t_far = t_max
+        hit_axis = -1
+        hit_sign = 1
+
+        for i in range(3):
+            inv_d = 1.0 / ray.direction[i] if abs(ray.direction[i]) > 1e-8 else float('inf')
+            t0 = (self.p0[i] - ray.origin[i]) * inv_d
+            t1 = (self.p1[i] - ray.origin[i]) * inv_d
+
+            if inv_d < 0:
+                t0, t1 = t1, t0
+
+            if t0 > t_near:
+                t_near = t0
+                hit_axis = i
+                hit_sign = -1 if inv_d < 0 else 1
+
+            if t1 < t_far:
+                t_far = t1
+
+            if t_far < t_near:
+                return None
+
+        if t_near < t_min or t_near > t_max:
+            return None
+
+        point = ray.at(t_near)
+
+        # Compute normal based on which face was hit
+        normal = Vec3(0, 0, 0)
+        if hit_axis == 0:
+            normal = Vec3(hit_sign, 0, 0)
+        elif hit_axis == 1:
+            normal = Vec3(0, hit_sign, 0)
+        else:
+            normal = Vec3(0, 0, hit_sign)
+
+        # Compute UV coordinates
+        u, v = self._get_box_uv(point, hit_axis)
+
+        hit_record = HitRecord(
+            point=point,
+            normal=normal,
+            t=t_near,
+            front_face=True,
+            material=self.material,
+            u=u,
+            v=v
+        )
+        hit_record.set_face_normal(ray, normal)
+
+        return hit_record
+
+    def _get_box_uv(self, point: Point3, axis: int) -> tuple[float, float]:
+        """Get UV coordinates for a point on the box surface."""
+        size = self.p1 - self.p0
+
+        if axis == 0:  # X face
+            u = (point.z - self.p0.z) / size.z if size.z > 0 else 0
+            v = (point.y - self.p0.y) / size.y if size.y > 0 else 0
+        elif axis == 1:  # Y face
+            u = (point.x - self.p0.x) / size.x if size.x > 0 else 0
+            v = (point.z - self.p0.z) / size.z if size.z > 0 else 0
+        else:  # Z face
+            u = (point.x - self.p0.x) / size.x if size.x > 0 else 0
+            v = (point.y - self.p0.y) / size.y if size.y > 0 else 0
+
+        return max(0, min(1, u)), max(0, min(1, v))
+
+    def bounding_box(self) -> Optional[AABB]:
+        return AABB(self.p0, self.p1)
+
+
+class Cylinder(Hittable):
+    """A cylinder aligned along the Y axis."""
+
+    def __init__(
+        self,
+        center: Point3,
+        radius: float,
+        height: float,
+        material: Optional[Material] = None,
+        capped: bool = True
+    ):
+        """Create a cylinder.
+
+        Args:
+            center: Center of the cylinder base
+            radius: Radius of the cylinder
+            height: Height of the cylinder
+            material: Material for shading
+            capped: Whether to include top and bottom caps
+        """
+        self.center = center
+        self.radius = radius
+        self.height = height
+        self.material = material
+        self.capped = capped
+        self.y_min = center.y
+        self.y_max = center.y + height
+
+    def hit(self, ray: Ray, t_min: float, t_max: float) -> Optional[HitRecord]:
+        """Test ray-cylinder intersection."""
+        # Ray-infinite cylinder intersection (ignoring Y)
+        oc = ray.origin - self.center
+        a = ray.direction.x ** 2 + ray.direction.z ** 2
+        b = 2 * (oc.x * ray.direction.x + oc.z * ray.direction.z)
+        c = oc.x ** 2 + oc.z ** 2 - self.radius ** 2
+
+        best_hit: Optional[HitRecord] = None
+        best_t = t_max
+
+        # Check side of cylinder
+        if abs(a) > 1e-8:
+            discriminant = b * b - 4 * a * c
+            if discriminant >= 0:
+                sqrt_d = math.sqrt(discriminant)
+                for sign in [-1, 1]:
+                    t = (-b + sign * sqrt_d) / (2 * a)
+                    if t_min < t < best_t:
+                        y = ray.origin.y + t * ray.direction.y
+                        if self.y_min < y < self.y_max:
+                            point = ray.at(t)
+                            # Normal is radial
+                            normal = Vec3(point.x - self.center.x, 0, point.z - self.center.z).normalize()
+
+                            # Cylindrical UV
+                            theta = math.atan2(point.z - self.center.z, point.x - self.center.x)
+                            u = (theta + math.pi) / (2 * math.pi)
+                            v = (y - self.y_min) / self.height
+
+                            hit_record = HitRecord(
+                                point=point,
+                                normal=normal,
+                                t=t,
+                                front_face=True,
+                                material=self.material,
+                                u=u,
+                                v=v
+                            )
+                            hit_record.set_face_normal(ray, normal)
+                            best_hit = hit_record
+                            best_t = t
+
+        # Check caps
+        if self.capped:
+            for cap_y, cap_normal in [(self.y_min, Vec3(0, -1, 0)), (self.y_max, Vec3(0, 1, 0))]:
+                if abs(ray.direction.y) > 1e-8:
+                    t = (cap_y - ray.origin.y) / ray.direction.y
+                    if t_min < t < best_t:
+                        point = ray.at(t)
+                        dist_sq = (point.x - self.center.x) ** 2 + (point.z - self.center.z) ** 2
+                        if dist_sq <= self.radius ** 2:
+                            # Disk UV
+                            u = (point.x - self.center.x) / (2 * self.radius) + 0.5
+                            v = (point.z - self.center.z) / (2 * self.radius) + 0.5
+
+                            hit_record = HitRecord(
+                                point=point,
+                                normal=cap_normal,
+                                t=t,
+                                front_face=True,
+                                material=self.material,
+                                u=u,
+                                v=v
+                            )
+                            hit_record.set_face_normal(ray, cap_normal)
+                            best_hit = hit_record
+                            best_t = t
+
+        return best_hit
+
+    def bounding_box(self) -> Optional[AABB]:
+        return AABB(
+            Point3(self.center.x - self.radius, self.y_min, self.center.z - self.radius),
+            Point3(self.center.x + self.radius, self.y_max, self.center.z + self.radius)
+        )
+
+
+class Cone(Hittable):
+    """A cone aligned along the Y axis."""
+
+    def __init__(
+        self,
+        apex: Point3,
+        radius: float,
+        height: float,
+        material: Optional[Material] = None,
+        capped: bool = True
+    ):
+        """Create a cone.
+
+        Args:
+            apex: The tip of the cone
+            radius: Radius at the base
+            height: Height from apex to base
+            material: Material for shading
+            capped: Whether to include the base cap
+        """
+        self.apex = apex
+        self.radius = radius
+        self.height = height
+        self.material = material
+        self.capped = capped
+
+        # Precompute values
+        self.tan_theta = radius / height
+        self.tan_theta_sq = self.tan_theta ** 2
+        self.y_min = apex.y - height  # Base
+        self.y_max = apex.y  # Apex
+
+    def hit(self, ray: Ray, t_min: float, t_max: float) -> Optional[HitRecord]:
+        """Test ray-cone intersection."""
+        # Transform ray relative to apex
+        oc = ray.origin - self.apex
+
+        # Quadratic coefficients for cone equation
+        dx, dy, dz = ray.direction.x, ray.direction.y, ray.direction.z
+        ox, oy, oz = oc.x, oc.y, oc.z
+
+        a = dx * dx + dz * dz - self.tan_theta_sq * dy * dy
+        b = 2 * (ox * dx + oz * dz - self.tan_theta_sq * oy * dy)
+        c = ox * ox + oz * oz - self.tan_theta_sq * oy * oy
+
+        best_hit: Optional[HitRecord] = None
+        best_t = t_max
+
+        # Check cone surface
+        if abs(a) > 1e-8:
+            discriminant = b * b - 4 * a * c
+            if discriminant >= 0:
+                sqrt_d = math.sqrt(discriminant)
+                for sign in [-1, 1]:
+                    t = (-b + sign * sqrt_d) / (2 * a)
+                    if t_min < t < best_t:
+                        point = ray.at(t)
+                        y = point.y
+
+                        # Check if within cone height
+                        if self.y_min < y < self.y_max:
+                            # Compute normal
+                            # For a cone, the normal is perpendicular to the surface
+                            r = math.sqrt((point.x - self.apex.x) ** 2 + (point.z - self.apex.z) ** 2)
+                            if r > 1e-8:
+                                nx = (point.x - self.apex.x) / r
+                                nz = (point.z - self.apex.z) / r
+                                ny = self.tan_theta
+                                normal = Vec3(nx, ny, nz).normalize()
+
+                                # Conical UV
+                                theta = math.atan2(point.z - self.apex.z, point.x - self.apex.x)
+                                u = (theta + math.pi) / (2 * math.pi)
+                                v = (y - self.y_min) / self.height
+
+                                hit_record = HitRecord(
+                                    point=point,
+                                    normal=normal,
+                                    t=t,
+                                    front_face=True,
+                                    material=self.material,
+                                    u=u,
+                                    v=v
+                                )
+                                hit_record.set_face_normal(ray, normal)
+                                best_hit = hit_record
+                                best_t = t
+
+        # Check base cap
+        if self.capped and abs(ray.direction.y) > 1e-8:
+            t = (self.y_min - ray.origin.y) / ray.direction.y
+            if t_min < t < best_t:
+                point = ray.at(t)
+                dist_sq = (point.x - self.apex.x) ** 2 + (point.z - self.apex.z) ** 2
+                if dist_sq <= self.radius ** 2:
+                    normal = Vec3(0, -1, 0)
+
+                    u = (point.x - self.apex.x) / (2 * self.radius) + 0.5
+                    v = (point.z - self.apex.z) / (2 * self.radius) + 0.5
+
+                    hit_record = HitRecord(
+                        point=point,
+                        normal=normal,
+                        t=t,
+                        front_face=True,
+                        material=self.material,
+                        u=u,
+                        v=v
+                    )
+                    hit_record.set_face_normal(ray, normal)
+                    best_hit = hit_record
+                    best_t = t
+
+        return best_hit
+
+    def bounding_box(self) -> Optional[AABB]:
+        return AABB(
+            Point3(self.apex.x - self.radius, self.y_min, self.apex.z - self.radius),
+            Point3(self.apex.x + self.radius, self.y_max, self.apex.z + self.radius)
+        )

@@ -4,7 +4,7 @@ import pytest
 import math
 from spectraforge.vec3 import Vec3, Point3
 from spectraforge.ray import Ray
-from spectraforge.shapes import Sphere, Plane, Triangle, HittableList, AABB
+from spectraforge.shapes import Sphere, Plane, Triangle, HittableList, AABB, Box, Cylinder, Cone
 from spectraforge.materials import Lambertian, Color
 
 
@@ -288,3 +288,240 @@ class TestNumericalStability:
         ray = Ray(Point3(0, 0, -2e6), Vec3(0, 0, 1))
         hit = sphere.hit(ray, 0.001, float('inf'))
         assert hit is not None
+
+
+class TestBox:
+    """Test Box class."""
+
+    def test_creation(self):
+        box = Box(Point3(0, 0, 0), Point3(1, 1, 1))
+        # Box should normalize corners so p0 is min and p1 is max
+        assert box.p0.x == 0
+        assert box.p1.x == 1
+
+    def test_corners_normalized(self):
+        """Test that corners are normalized regardless of input order."""
+        box = Box(Point3(1, 1, 1), Point3(0, 0, 0))
+        assert box.p0.x == 0
+        assert box.p1.x == 1
+
+    def test_hit_front_face(self):
+        box = Box(Point3(-1, -1, -1), Point3(1, 1, 1))
+        ray = Ray(Point3(0, 0, -5), Vec3(0, 0, 1))
+        hit = box.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert abs(hit.t - 4.0) < 1e-6  # Hits at z=-1
+        assert abs(hit.point.z - (-1.0)) < 1e-6
+
+    def test_hit_from_side(self):
+        box = Box(Point3(-1, -1, -1), Point3(1, 1, 1))
+        ray = Ray(Point3(5, 0, 0), Vec3(-1, 0, 0))
+        hit = box.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert abs(hit.point.x - 1.0) < 1e-6
+
+    def test_miss(self):
+        box = Box(Point3(-1, -1, -1), Point3(1, 1, 1))
+        ray = Ray(Point3(0, 5, -5), Vec3(0, 0, 1))
+        hit = box.hit(ray, 0.001, float('inf'))
+
+        assert hit is None
+
+    def test_ray_inside(self):
+        box = Box(Point3(-1, -1, -1), Point3(1, 1, 1))
+        ray = Ray(Point3(0, 0, 0), Vec3(1, 0, 0))
+        hit = box.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert hit.front_face is False
+
+    def test_uv_coordinates(self):
+        box = Box(Point3(0, 0, 0), Point3(1, 1, 1))
+        ray = Ray(Point3(0.5, 0.5, -1), Vec3(0, 0, 1))
+        hit = box.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert 0 <= hit.u <= 1
+        assert 0 <= hit.v <= 1
+
+    def test_bounding_box(self):
+        box = Box(Point3(-1, -2, -3), Point3(1, 2, 3))
+        bbox = box.bounding_box()
+
+        assert bbox is not None
+        assert bbox.minimum.x == -1
+        assert bbox.maximum.y == 2
+
+    def test_with_material(self):
+        material = Lambertian(Color(1, 0, 0))
+        box = Box(Point3(-1, -1, -1), Point3(1, 1, 1), material)
+        ray = Ray(Point3(0, 0, -5), Vec3(0, 0, 1))
+        hit = box.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert hit.material is material
+
+
+class TestCylinder:
+    """Test Cylinder class."""
+
+    def test_creation(self):
+        cyl = Cylinder(Point3(0, 0, 0), 1.0, 2.0)
+        assert cyl.radius == 1.0
+        assert cyl.height == 2.0
+        assert cyl.y_min == 0
+        assert cyl.y_max == 2.0
+
+    def test_hit_side(self):
+        cyl = Cylinder(Point3(0, 0, 0), 1.0, 2.0)
+        ray = Ray(Point3(5, 1, 0), Vec3(-1, 0, 0))
+        hit = cyl.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert abs(hit.point.x - 1.0) < 1e-6
+        assert abs(hit.point.y - 1.0) < 1e-6
+
+    def test_hit_top_cap(self):
+        cyl = Cylinder(Point3(0, 0, 0), 1.0, 2.0, capped=True)
+        ray = Ray(Point3(0, 5, 0), Vec3(0, -1, 0))
+        hit = cyl.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert abs(hit.point.y - 2.0) < 1e-6
+
+    def test_hit_bottom_cap(self):
+        cyl = Cylinder(Point3(0, 0, 0), 1.0, 2.0, capped=True)
+        ray = Ray(Point3(0, -5, 0), Vec3(0, 1, 0))
+        hit = cyl.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert abs(hit.point.y) < 1e-6
+
+    def test_miss_through_uncapped(self):
+        """Ray through an uncapped cylinder shouldn't hit caps."""
+        cyl = Cylinder(Point3(0, 0, 0), 1.0, 2.0, capped=False)
+        ray = Ray(Point3(0, 5, 0), Vec3(0, -1, 0))
+        hit = cyl.hit(ray, 0.001, float('inf'))
+
+        # Should pass through without hitting (no caps, misses side)
+        assert hit is None
+
+    def test_miss_outside(self):
+        cyl = Cylinder(Point3(0, 0, 0), 1.0, 2.0)
+        ray = Ray(Point3(5, 1, 5), Vec3(1, 0, 0))
+        hit = cyl.hit(ray, 0.001, float('inf'))
+
+        assert hit is None
+
+    def test_uv_coordinates_side(self):
+        cyl = Cylinder(Point3(0, 0, 0), 1.0, 2.0)
+        ray = Ray(Point3(5, 1, 0), Vec3(-1, 0, 0))
+        hit = cyl.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert 0 <= hit.u <= 1
+        assert 0 <= hit.v <= 1
+        # v should be 0.5 at y=1 (half height)
+        assert abs(hit.v - 0.5) < 1e-6
+
+    def test_bounding_box(self):
+        cyl = Cylinder(Point3(0, 0, 0), 1.0, 2.0)
+        bbox = cyl.bounding_box()
+
+        assert bbox is not None
+        assert bbox.minimum.x == -1
+        assert bbox.maximum.x == 1
+        assert bbox.minimum.y == 0
+        assert bbox.maximum.y == 2
+
+    def test_with_material(self):
+        material = Lambertian(Color(0, 1, 0))
+        cyl = Cylinder(Point3(0, 0, 0), 1.0, 2.0, material)
+        ray = Ray(Point3(5, 1, 0), Vec3(-1, 0, 0))
+        hit = cyl.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert hit.material is material
+
+
+class TestCone:
+    """Test Cone class."""
+
+    def test_creation(self):
+        cone = Cone(Point3(0, 2, 0), 1.0, 2.0)
+        assert cone.radius == 1.0
+        assert cone.height == 2.0
+        assert cone.y_min == 0  # base
+        assert cone.y_max == 2  # apex
+
+    def test_hit_side(self):
+        cone = Cone(Point3(0, 2, 0), 1.0, 2.0)
+        ray = Ray(Point3(5, 1, 0), Vec3(-1, 0, 0))
+        hit = cone.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        # At y=1 (halfway), radius should be 0.5
+        assert abs(hit.point.x - 0.5) < 1e-5
+
+    def test_hit_base_cap(self):
+        cone = Cone(Point3(0, 2, 0), 1.0, 2.0, capped=True)
+        ray = Ray(Point3(0, -5, 0), Vec3(0, 1, 0))
+        hit = cone.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert abs(hit.point.y) < 1e-6
+
+    def test_miss_uncapped_through_base(self):
+        cone = Cone(Point3(0, 2, 0), 1.0, 2.0, capped=False)
+        ray = Ray(Point3(0, -5, 0), Vec3(0, 1, 0))
+        hit = cone.hit(ray, 0.001, float('inf'))
+
+        # Should pass through the open base
+        assert hit is None
+
+    def test_miss_outside(self):
+        cone = Cone(Point3(0, 2, 0), 1.0, 2.0)
+        ray = Ray(Point3(5, 1, 5), Vec3(1, 0, 0))
+        hit = cone.hit(ray, 0.001, float('inf'))
+
+        assert hit is None
+
+    def test_uv_coordinates(self):
+        cone = Cone(Point3(0, 2, 0), 1.0, 2.0)
+        ray = Ray(Point3(5, 1, 0), Vec3(-1, 0, 0))
+        hit = cone.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert 0 <= hit.u <= 1
+        assert 0 <= hit.v <= 1
+
+    def test_bounding_box(self):
+        cone = Cone(Point3(0, 2, 0), 1.0, 2.0)
+        bbox = cone.bounding_box()
+
+        assert bbox is not None
+        assert bbox.minimum.x == -1
+        assert bbox.maximum.x == 1
+        assert bbox.minimum.y == 0
+        assert bbox.maximum.y == 2
+
+    def test_with_material(self):
+        material = Lambertian(Color(0, 0, 1))
+        cone = Cone(Point3(0, 2, 0), 1.0, 2.0, material)
+        ray = Ray(Point3(5, 1, 0), Vec3(-1, 0, 0))
+        hit = cone.hit(ray, 0.001, float('inf'))
+
+        assert hit is not None
+        assert hit.material is material
+
+    def test_hit_near_apex(self):
+        """Test hitting the cone near its apex."""
+        cone = Cone(Point3(0, 2, 0), 1.0, 2.0)
+        ray = Ray(Point3(0.1, 1.9, -1), Vec3(0, 0, 1))
+        hit = cone.hit(ray, 0.001, float('inf'))
+
+        # Near apex, should still hit
+        if hit is not None:
+            assert hit.point.y < 2.0

@@ -156,6 +156,96 @@ class Sphere(Hittable):
         return f"Sphere(center={self.center}, radius={self.radius})"
 
 
+class MovingSphere(Hittable):
+    """A sphere that moves linearly between two positions over time.
+
+    Used for motion blur effects.
+    """
+
+    def __init__(
+        self,
+        center0: Point3,
+        center1: Point3,
+        time0: float,
+        time1: float,
+        radius: float,
+        material: Optional[Material] = None
+    ):
+        """Create a moving sphere.
+
+        Args:
+            center0: Center position at time0
+            center1: Center position at time1
+            time0: Start time
+            time1: End time
+            radius: Radius of the sphere
+            material: Material for shading
+        """
+        self.center0 = center0
+        self.center1 = center1
+        self.time0 = time0
+        self.time1 = time1
+        self.radius = radius
+        self.material = material
+
+    def center(self, time: float) -> Point3:
+        """Get the center position at a given time."""
+        if self.time1 == self.time0:
+            return self.center0
+        t = (time - self.time0) / (self.time1 - self.time0)
+        return self.center0 + (self.center1 - self.center0) * t
+
+    def hit(self, ray: Ray, t_min: float, t_max: float) -> Optional[HitRecord]:
+        """Test ray-sphere intersection at the ray's time."""
+        current_center = self.center(ray.time)
+
+        oc = ray.origin - current_center
+        a = ray.direction.length_squared()
+        half_b = oc.dot(ray.direction)
+        c = oc.length_squared() - self.radius * self.radius
+
+        discriminant = half_b * half_b - a * c
+        if discriminant < 0:
+            return None
+
+        sqrtd = math.sqrt(discriminant)
+
+        root = (-half_b - sqrtd) / a
+        if root < t_min or root > t_max:
+            root = (-half_b + sqrtd) / a
+            if root < t_min or root > t_max:
+                return None
+
+        point = ray.at(root)
+        outward_normal = (point - current_center) / self.radius
+
+        # Calculate UV coordinates
+        theta = math.acos(-outward_normal.y)
+        phi = math.atan2(-outward_normal.z, outward_normal.x) + math.pi
+        u = phi / (2 * math.pi)
+        v = theta / math.pi
+
+        hit_record = HitRecord(
+            point=point,
+            normal=outward_normal,
+            t=root,
+            front_face=True,
+            material=self.material,
+            u=u,
+            v=v
+        )
+        hit_record.set_face_normal(ray, outward_normal)
+
+        return hit_record
+
+    def bounding_box(self) -> Optional['AABB']:
+        """Return AABB that contains the sphere at all times."""
+        r_vec = Vec3(abs(self.radius), abs(self.radius), abs(self.radius))
+        box0 = AABB(self.center0 - r_vec, self.center0 + r_vec)
+        box1 = AABB(self.center1 - r_vec, self.center1 + r_vec)
+        return AABB.surrounding_box(box0, box1)
+
+
 class AABB:
     """Axis-Aligned Bounding Box for acceleration structures."""
 

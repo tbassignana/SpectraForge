@@ -6,16 +6,18 @@ Supports:
 - Depth of field (defocus blur)
 - Configurable field of view
 - Arbitrary positioning via look-at
+- Motion blur (shutter time range)
 """
 
 from __future__ import annotations
 import math
+import random
 from .vec3 import Vec3, Point3
 from .ray import Ray
 
 
 class Camera:
-    """A camera with perspective projection and optional depth of field."""
+    """A camera with perspective projection, depth of field, and motion blur."""
 
     def __init__(
         self,
@@ -25,7 +27,9 @@ class Camera:
         vfov: float = 90.0,
         aspect_ratio: float = 16.0 / 9.0,
         aperture: float = 0.0,
-        focus_dist: float = 1.0
+        focus_dist: float = 1.0,
+        shutter_open: float = 0.0,
+        shutter_close: float = 0.0
     ):
         """Create a camera.
 
@@ -37,6 +41,8 @@ class Camera:
             aspect_ratio: Width / Height ratio
             aperture: Lens aperture for depth of field (0 = pinhole)
             focus_dist: Distance to the focus plane
+            shutter_open: Time when shutter opens (for motion blur)
+            shutter_close: Time when shutter closes (for motion blur)
         """
         theta = math.radians(vfov)
         h = math.tan(theta / 2)
@@ -59,6 +65,8 @@ class Camera:
         )
 
         self.lens_radius = aperture / 2
+        self.shutter_open = shutter_open
+        self.shutter_close = shutter_close
 
     def get_ray(self, s: float, t: float) -> Ray:
         """Generate a ray for the given UV coordinates on the image plane.
@@ -85,7 +93,13 @@ class Camera:
             - offset
         )
 
-        return Ray(self.origin + offset, direction.normalize())
+        # Motion blur: random time within shutter interval
+        if self.shutter_close > self.shutter_open:
+            time = self.shutter_open + random.random() * (self.shutter_close - self.shutter_open)
+        else:
+            time = self.shutter_open
+
+        return Ray(self.origin + offset, direction.normalize(), time)
 
     def __repr__(self) -> str:
         return f"Camera(origin={self.origin}, looking_at={self.lower_left_corner + self.horizontal/2 + self.vertical/2})"

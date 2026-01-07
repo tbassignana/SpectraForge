@@ -16,7 +16,7 @@ __author__ = "SpectraForge Team"
 
 from .vec3 import Vec3, Point3, Color
 from .ray import Ray
-from .shapes import Sphere, Plane, Triangle, HittableList, AABB, HitRecord, Hittable, Box, Cylinder, Cone
+from .shapes import Sphere, Plane, Triangle, HittableList, AABB, HitRecord, Hittable, Box, Cylinder, Cone, MovingSphere
 from .materials import Material, Lambertian, Metal, Dielectric, Emissive, PBRMaterial
 from .camera import Camera
 from .renderer import Renderer, RenderSettings, get_platform_info

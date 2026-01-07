@@ -31,20 +31,29 @@
                 <section class="panel">
                     <h2>Render Settings</h2>
                     <div class="form-group">
+                        <label for="qualityPreset">Quality</label>
+                        <select id="qualityPreset">
+                            <option value="preview" selected>Preview (fast)</option>
+                            <option value="draft">Draft</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High (slow)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="width">Width</label>
-                        <input type="number" id="width" value="640" min="100" max="3840" step="10">
+                        <input type="number" id="width" value="320" min="100" max="3840" step="10">
                     </div>
                     <div class="form-group">
                         <label for="height">Height</label>
-                        <input type="number" id="height" value="480" min="100" max="2160" step="10">
+                        <input type="number" id="height" value="240" min="100" max="2160" step="10">
                     </div>
                     <div class="form-group">
                         <label for="samples">Samples</label>
-                        <input type="number" id="samples" value="50" min="1" max="10000">
+                        <input type="number" id="samples" value="10" min="1" max="10000">
                     </div>
                     <div class="form-group">
                         <label for="maxDepth">Max Depth</label>
-                        <input type="number" id="maxDepth" value="25" min="1" max="100">
+                        <input type="number" id="maxDepth" value="10" min="1" max="100">
                     </div>
                     <div class="form-group">
                         <label for="threads">Threads</label>

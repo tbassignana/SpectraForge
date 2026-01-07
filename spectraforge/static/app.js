@@ -8,12 +8,21 @@ let isRendering = false;
 let pollInterval = null;
 let currentImageData = null;
 
+// Quality presets
+const QUALITY_PRESETS = {
+    preview: { width: 320, height: 240, samples: 10, maxDepth: 10 },
+    draft:   { width: 480, height: 360, samples: 25, maxDepth: 15 },
+    medium:  { width: 640, height: 480, samples: 50, maxDepth: 25 },
+    high:    { width: 800, height: 600, samples: 100, maxDepth: 50 }
+};
+
 // DOM Elements
 const elements = {
     // Scene
     scenePreset: document.getElementById('scenePreset'),
 
     // Render settings
+    qualityPreset: document.getElementById('qualityPreset'),
     width: document.getElementById('width'),
     height: document.getElementById('height'),
     samples: document.getElementById('samples'),
@@ -78,10 +87,23 @@ function init() {
     // Scene preset changes
     elements.scenePreset.addEventListener('change', updateCameraForScene);
 
+    // Quality preset changes
+    elements.qualityPreset.addEventListener('change', updateQualityPreset);
+
     // Load platform info
     fetchPlatformInfo();
 
     console.log('SpectraForge UI initialized');
+}
+
+function updateQualityPreset() {
+    const preset = QUALITY_PRESETS[elements.qualityPreset.value];
+    if (preset) {
+        elements.width.value = preset.width;
+        elements.height.value = preset.height;
+        elements.samples.value = preset.samples;
+        elements.maxDepth.value = preset.maxDepth;
+    }
 }
 
 function updateCameraForScene() {

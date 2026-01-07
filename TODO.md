@@ -89,6 +89,13 @@
   - Sharpen filter (unsharp mask)
   - Film grain effect (artistic/cinematic look)
   - Intermediate result storage for debugging
+- [x] Render passes / AOV support (aov.py)
+  - Beauty, Depth, Normal, Albedo, Emission passes
+  - Direct/Indirect lighting separation
+  - Object ID and Material ID for compositing
+  - UV and Position passes
+  - Depth normalization and normal packing utilities
+  - RenderPassCompositor for pass visualization and reconstruction
 
 ### Future Enhancements
 (All planned features have been implemented!)
@@ -117,6 +124,7 @@ spectraforge/
 ├── bloom.py         # Bloom/glow post-processing effects
 ├── color_correction.py  # Color grading and correction
 ├── postprocess.py   # Post-processing pipeline orchestrator
+├── aov.py           # Render passes (AOV) support
 └── scene_parser.py  # YAML/JSON scene loader
 ```
 
@@ -141,4 +149,5 @@ spectraforge/
 - Added bloom/glow effects with multi-scale blur
 - Added color correction (exposure, contrast, saturation, temperature, LUT support)
 - Added unified post-processing pipeline with chromatic aberration, sharpen, film grain
-- 517 unit tests passing
+- Added AOV/render pass support (depth, normal, albedo, object ID, etc.)
+- 563 unit tests passing

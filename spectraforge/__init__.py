@@ -57,3 +57,9 @@ from .postprocess import (
     apply_chromatic_aberration, apply_sharpen, apply_film_grain,
     create_pipeline
 )
+from .aov import (
+    AOVType, AOVSample, AOVBuffer, AOVManager,
+    normalize_depth, pack_normal, unpack_normal,
+    create_object_id_colormap, combine_direct_indirect,
+    depth_to_world_position, RenderPassCompositor
+)

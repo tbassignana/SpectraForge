@@ -66,6 +66,24 @@ python main.py --info
 | `--output` | output/render.png | Output file path (.png, .hdr, .exr) |
 | `--scene` | demo | Scene preset: `demo` or `cornell` |
 
+## Web UI (Recommended for Beginners)
+
+Launch the browser-based interface for an interactive rendering experience:
+
+```bash
+python -m spectraforge.ui
+```
+
+This opens http://localhost:8080 in your browser with:
+- **Scene Presets**: Demo, Cornell Box, Minimal
+- **Render Settings**: Resolution, samples, depth, threads
+- **Camera Controls**: Position, look-at, FOV, aperture, focus distance
+- **Post-Processing**: Denoise, tone mapping, bloom, exposure
+- **Real-time Progress**: Progress bar with ETA
+- **Download**: Save rendered images as PNG
+
+No additional dependencies required - works on any platform with Python 3.8+.
+
 ## Python API Usage
 
 ### Basic Render

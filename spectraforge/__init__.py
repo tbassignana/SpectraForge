@@ -24,3 +24,4 @@ from .bvh import BVH, BVHNode, build_bvh
 from .lights import Light, PointLight, DirectionalLight, AreaLight, SphereLight, LightList
 from .volumes import ConstantMedium, SubsurfaceScatteringMaterial, create_fog, create_smoke
 from .scene_parser import SceneParser, load_scene, parse_scene
+from .obj_loader import OBJLoader, SmoothTriangle, load_obj, get_mesh_bounds, get_mesh_stats

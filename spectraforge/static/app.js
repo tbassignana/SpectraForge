@@ -8,12 +8,12 @@ let isRendering = false;
 let pollInterval = null;
 let currentImageData = null;
 
-// Quality presets
+// Quality presets (tuned for pure Python performance)
 const QUALITY_PRESETS = {
-    preview: { width: 320, height: 240, samples: 10, maxDepth: 10 },
-    draft:   { width: 480, height: 360, samples: 25, maxDepth: 15 },
-    medium:  { width: 640, height: 480, samples: 50, maxDepth: 25 },
-    high:    { width: 800, height: 600, samples: 100, maxDepth: 50 }
+    preview: { width: 160, height: 120, samples: 4, maxDepth: 5 },   // ~10-20 sec
+    draft:   { width: 240, height: 180, samples: 8, maxDepth: 8 },   // ~1-2 min
+    medium:  { width: 320, height: 240, samples: 16, maxDepth: 10 }, // ~5-10 min
+    high:    { width: 480, height: 360, samples: 32, maxDepth: 15 }  // ~20-40 min
 };
 
 // DOM Elements

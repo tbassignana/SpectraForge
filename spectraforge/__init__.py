@@ -63,3 +63,7 @@ from .aov import (
     create_object_id_colormap, combine_direct_indirect,
     depth_to_world_position, RenderPassCompositor
 )
+from .adaptive import (
+    AdaptiveMode, AdaptiveStats, PixelState, AdaptiveSampler,
+    TileAdaptiveSampler, estimate_required_samples
+)

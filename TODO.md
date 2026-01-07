@@ -96,6 +96,12 @@
   - UV and Position passes
   - Depth normalization and normal packing utilities
   - RenderPassCompositor for pass visualization and reconstruction
+- [x] Adaptive sampling (adaptive.py)
+  - Per-pixel variance estimation with Welford's algorithm
+  - Error threshold-based convergence
+  - Priority-based sample distribution
+  - Tile-based adaptive sampling for multi-threading
+  - Sample budget estimation utilities
 
 ### Future Enhancements
 (All planned features have been implemented!)
@@ -125,6 +131,7 @@ spectraforge/
 ├── color_correction.py  # Color grading and correction
 ├── postprocess.py   # Post-processing pipeline orchestrator
 ├── aov.py           # Render passes (AOV) support
+├── adaptive.py      # Adaptive sampling
 └── scene_parser.py  # YAML/JSON scene loader
 ```
 
@@ -150,4 +157,5 @@ spectraforge/
 - Added color correction (exposure, contrast, saturation, temperature, LUT support)
 - Added unified post-processing pipeline with chromatic aberration, sharpen, film grain
 - Added AOV/render pass support (depth, normal, albedo, object ID, etc.)
-- 563 unit tests passing
+- Added adaptive sampling with per-pixel variance tracking
+- 611 unit tests passing
